@@ -1,15 +1,28 @@
 import Hero from '../components/Hero';
-import HomeCards from '../components/HomeCards';
-import JobListings from '../components/JobListings';
-import ViewAllJobs from '../components/ViewAllJobs';
+import TileMap from '../components/TileMap';;
+import axios from 'axios';
+import { useState, useEffect } from 'react';
 
 const HomePage = () => {
+    const [word, setWord] = useState('');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await axios.get('https://random-word-api.herokuapp.com/word');
+                setWord(result.data[0]);
+            }
+            catch (error) {
+                console.log(error)
+            }
+        };
+        fetchData();
+    }, []);
+
     return (
         <>
-            <Hero title="React Jobs" subtitle="Find your Job!" />
-            <HomeCards />
-            <JobListings />
-            <ViewAllJobs />
+            <Hero title={word} subtitle="search for the word!" />
+            <TileMap wordList={[word]} numTilesX={5} numTilesY={5} />
         </>
     )
 }
