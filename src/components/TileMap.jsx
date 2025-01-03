@@ -1,101 +1,112 @@
-import React from 'react';
-
+import { useState, useEffect, useCallback } from 'react';
 import LetterTile from './LetterTile';
+import PropTypes from 'prop-types';
 
-const TileMap = ({ wordList = ['default'], numTilesX = 10, numTilesY = 10 }) => {
+function TileMap({ numTilesX, numTilesY, word }) {
 
-    if (!wordList || wordList.length == 0) {
-        return;
-    }
+    const [letterMap, setLetterMap] = useState({});
+    const [selectedLetters, setSelectedLetters] = useState({});
 
-    const classN = `grid grid-cols-${numTilesY} grid-rows-${numTilesX} gap-2 p-2 border border-black border-2 rounded-md`;
+    useEffect(() => {
+        createLetterMap();
+    }, [word])
 
-    const LetterIndex = setLetterIndexes();
-
-    function randomChar(length = 1) {
-        let result = '';
+    function randomChar() {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        return characters.charAt(Math.floor(Math.random() * characters.length));
+    };
 
-        // Loop to generate characters for the specified length
-        for (let i = 0; i < length; i++) {
-            const randomInd = Math.floor(Math.random() * characters.length);
-            result += characters.charAt(randomInd);
+    function createLetterMap() {
+        setSelectedLetters([]);
+        const myLetterMap = {};
+        let remainingWord = word.toUpperCase();
+
+        const isVertical = Math.round(Math.random());
+        let startX, startY;
+
+        if (isVertical) {
+            startX = Math.floor(Math.random() * numTilesX);
+            startY = Math.floor(Math.random() * (numTilesY - word.length));
+        } else {
+            startX = Math.floor(Math.random() * (numTilesX - word.length));
+            startY = Math.floor(Math.random() * numTilesY);
         }
-        return result;
-    }
 
-    function randomStartPos() {
-        let x = Math.floor(Math.random() * (numTilesX - 1));
-        let y = Math.floor(Math.random() * (numTilesY - 1));
-        return [x, y];
-    }
+        for (let x = 0; x < numTilesX; x++) {
+            for (let y = 0; y < numTilesY; y++) {
+                const key = [x, y];
+                if (x === startX && y === startY && remainingWord.length > 0) {
+                    myLetterMap[key] = remainingWord.charAt(0) + '?';
+                    remainingWord = remainingWord.slice(1);
 
-    function setLetterIndexes() {
-        let LetterIndex = {};
-
-        wordList.forEach((word) => {
-            word = word.toUpperCase();
-
-
-            let startPos = randomStartPos();
-            LetterIndex[startPos] = word.charAt(0);
-
-            let positions = [-1, 0, 1];
-
-            for (let i = 1; i < word.length; i++) {
-                let attempts = 0;
-                while (attempts < 8) {
-                    // Offset will be random value from -1, 0, 1
-                    let xOffset = positions[Math.floor(Math.random() * positions.length)];
-                    let yOffset = positions[Math.floor(Math.random() * positions.length)];
-
-                    // New position = old position offsetted
-                    let newPos = [
-                        startPos[0] + xOffset,
-                        startPos[1] + yOffset
-                    ];
-
-                    // If the new position is within bounds
-                    if (newPos[0] > 0 && newPos[1] > 0 && newPos[0] < numTilesX && newPos[1] < numTilesY) {
-                        if (LetterIndex[newPos] == undefined) {
-                            startPos = newPos;
-                            LetterIndex[newPos] = word.charAt(i);
-                            break;
-                        }
+                    if (isVertical) {
+                        startY++;
+                    } else {
+                        startX++;
                     }
-
-                    attempts = attempts + 1;
+                } else {
+                    myLetterMap[key] = randomChar();
                 }
             }
+        }
 
-        });
+        setLetterMap(myLetterMap);
+    };
 
-        console.log(LetterIndex);
-
-        return LetterIndex;
+    const handleClick = (x, y, previouslySelected) => {
+        let key = [x, y];
+        let letter = letterMap[key];
+        if (!previouslySelected) {
+            setSelectedLetters((prev) => ({ ...prev, [key]: letter }));
+        }
+        else {
+            setSelectedLetters((prev) => {
+                const newState = { ...prev };
+                delete newState[key];
+                return newState;
+            });
+        }
+        console.log(letter);
+        console.log(x, y);
     }
 
     return (
-        <div className='flex justify-center'>
-            <div
-                className={classN}
-            >
-                {
-                    Array.from({ length: numTilesX }).map((_, xIndex) => (
-                        Array.from({ length: numTilesY }).map((_, yIndex) => {
-                            // console.log(xIndex + '' + yIndex);
+        <>
+            <div className='flex justify-center'>
+                <div
+                    style={{
+                        gridTemplateColumns: `repeat(${numTilesY}, minmax(0, 1fr))`,
+                        gridTemplateRows: `repeat(${numTilesX}, minmax(0, 1fr))`,
+                    }}
+                    className='grid gap-2 p-2 border-2 border-black rounded-md'
+                >
+                    {Array.from({ length: numTilesX }).map((_, x) =>
+                        Array.from({ length: numTilesY }).map((_, y) => {
+                            const key = `${x},${y}`;
                             return (
-                                < LetterTile
-                                    key={`${xIndex}-${yIndex}`}
-                                    letter={LetterIndex[[xIndex, yIndex]] !== undefined ? LetterIndex[[xIndex, yIndex]] + '?' : randomChar()}
-                                />
-                            )
-                        }
-                        )))
-                }
+                                <LetterTile key={key} letter={letterMap[key]} onClick={(previouslySelected) => handleClick(x, y, previouslySelected)} />
+                            );
+                        })
+                    )}
+                </div>
             </div>
-        </div>
-    )
+            <div className='flex justify-center'>
+                <h1>{JSON.stringify(selectedLetters)}</h1>
+            </div>
+        </>
+    );
 }
 
-export default TileMap
+TileMap.propTypes = {
+    numTilesX: PropTypes.number,
+    numTilesY: PropTypes.number,
+    word: PropTypes.string,
+};
+
+TileMap.defaultProps = {
+    numTilesX: 10,
+    numTilesY: 10,
+    word: 'default',
+};
+
+export default TileMap;

@@ -9,11 +9,12 @@ export default {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ['Roboto', 'sans-serif']
-      },
-      gridTemplateColumns: {
-        '70/30': '70% 30%'
+      colors: {
+        onNeutralBg: 'var(--onNeutralBg)',
+        neutralBg: 'var(--neutralBg)',
+        onPrimaryBg: 'var(--onPrimaryBg)',
+        primaryBg: 'var(--primaryBg)',
+        primary: 'var(--primary)',
       }
     },
   },
